@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nebula Obfuscator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a23;
+      color: #eee;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2a2a72;
+      padding: 20px;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    main {
+      padding: 40px 20px;
+      max-width: 900px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    h2 {
+      color: #72aaff;
+    }
+    p {
+      line-height: 1.6;
+      font-size: 1.1em;
+    }
+    #upload-section {
+      border: 2px dashed #457bff;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      color: #457bff;
+    }
+    #upload-section:hover {
+      background: #1a1a4d;
+    }
+    #file-input {
+      display: none;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      background: #121238;
+      border-radius: 10px;
+      border: none;
+      color: #eee;
+      font-family: monospace;
+      font-size: 1em;
+      padding: 15px;
+      resize: vertical;
+      white-space: pre-wrap;
+      word-break: break-word;
+      outline: none;
+    }
+    button {
+      align-self: start;
+      background: #457bff;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.1em;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #3a5cccaa;
+      cursor: not-allowed;
+    }
+    #output-section {
+      display: none;
+      margin-top: 20px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #output-section pre {
+      background: #121238;
+      padding: 15px;
+      border-radius: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 10px;
+    }
+    #filename-input {
+      width: 100%;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #457bff;
+      color: #eee;
+      background: #121238;
+      outline: none;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      background: #1a1a4d;
+      font-size: 0.9em;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+  <header>Nebula Obfuscator</header>
+  <main>
+    <section id="intro">
+      <h2>Secure Your Lua & Luau Scripts with Nebula Obfuscator</h2>
+      <p>Upload your <code>.lua</code> or <code>.luau</code> files below, or paste code directly into the textbox to protect your code instantly with Nebula's advanced obfuscation.</p>
+    </section>
+
+    <section id="upload-section" onclick="document.getElementById('file-input').click()">
+      Click here or drag & drop your <code>.lua</code> / <code>.luau</code> file to upload
+      <input type="file" id="file-input" accept=".lua,.luau" />
+    </section>
+
+    <textarea id="code-input" placeholder="Paste your Lua/Luau code here or upload a file..."></textarea>
+
+    <button id="obfuscate-btn" disabled>Obfuscate</button>
+
+    <section id="output-section">
+      <h2>Obfuscated Code</h2>
+      <pre id="output"></pre>
+
+      <label for="filename-input" style="margin-bottom: 5px; display: block; font-weight: 600; color: #72aaff;">File Name</label>
+      <input
+        type="text"
+        id="filename-input"
+        placeholder="examplename_obfus-v.1697618186188_ABC123DEF456.lua"
+        autocomplete="off"
+      />
+
+      <button id="download-btn">Download Obfuscated File</button>
+    </section>
+  </main>
+
+  <footer>&copy; 2025 Nebula Obfuscator. All rights reserved.</footer>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const obfuscateBtn = document.getElementById('obfuscate-btn');
+    const outputSection = document.getElementById('output-section');
+    const outputPre = document.getElementById('output');
+    const downloadBtn = document.getElementById('download-btn');
+    const codeInput = document.getElementById('code-input');
+    const filenameInput = document.getElementById('filename-input');
+
+    let originalFileName = 'code.lua';
+
+    codeInput.addEventListener('input', () => {
+      obfuscateBtn.disabled = codeInput.value.trim().length === 0;
+      outputSection.style.display = 'none';
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length === 0) return;
+
+      const file = fileInput.files[0];
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext !== 'lua' && ext !== 'luau') {
+        alert('Please upload a .lua or .luau file.');
+        fileInput.value = '';
+        return;
+      }
+
+      originalFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        codeInput.value = e.target.result;
+        obfuscateBtn.disabled = false;
+      };
+      reader.readAsText(file);
+    });
+
+    obfuscateBtn.addEventListener('click', () => {
+      const code = codeInput.value.trim();
+      const obfuscated = obfuscateCode(code);
+      outputPre.textContent = obfuscated;
+      outputSection.style.display = 'flex';
+      filenameInput.value = '';
+      updateFilenamePlaceholder();
+    });
+
+    function generateRandomString(length) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function updateFilenamePlaceholder() {
+      const timestamp = Date.now();
+      const randomStr = generateRandomString(12);
+      filenameInput.placeholder = `examplename_obfus-v.${timestamp}_${randomStr}.lua`;
+    }
+
+    updateFilenamePlaceholder();
+
+    downloadBtn.addEventListener('click', () => {
+      const content = outputPre.textContent.trim();
+      if (!content) return alert('Nothing to download.');
+
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      let fileName = filenameInput.value.trim();
+      if (!fileName) {
+        const timestamp = Date.now();
+        const randomStr = generateRandomString(10);
+        fileName = `obfuscated_v.test_${timestamp}_${randomStr}.lua`;
+      }
+
+      if (!fileName.toLowerCase().endsWith('.lua') && !fileName.toLowerCase().endsWith('.luau')) {
+        fileName += '.lua';
+      }
+
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      filenameInput.value = '';
+      updateFilenamePlaceholder();
+    });
+
+    function obfuscateCode(code) {
+      const charList = [];
+      for (let i = 0; i < code.length; i++) {
+        charList.push(code.charCodeAt(i));
+      }
+      const charString = charList.join(',');
+      const wrapped = `(function(s) local f = loadstring(s) f() end)(string.char(${charString}))`;
+
+      const asciiLogo = `--[[
+ ███╗   ██╗███████╗██████╗ ██╗   ██╗██╗      █████╗ 
+ ████╗  ██║██╔════╝██╔══██╗██║   ██║██║     ██╔══██╗
+ ██╔██╗ ██║█████╗  ██████╔╝██║   ██║██║     ███████║
+ ██║╚██╗██║██╔══╝  ██╔══██╗██║   ██║██║     ██╔══██║
+ ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗██║  ██║
+ ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝
+ 
+         NebulaObfuscation v.test
+]]--
+
+`;
+
+      return asciiLogo + wrapped;
+    }
+  </script>
+</body>
+</html>
