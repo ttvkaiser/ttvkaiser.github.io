@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nebula Obfuscator</title>
@@ -122,34 +120,21 @@
       <h2>Secure Your Lua & Luau Scripts with Nebula Obfuscator</h2>
       <p>Upload your <code>.lua</code> or <code>.luau</code> files below, or paste code directly into the textbox to protect your code instantly with Nebula's advanced obfuscation.</p>
     </section>
-
     <section id="upload-section" onclick="document.getElementById('file-input').click()">
       Click here or drag & drop your <code>.lua</code> / <code>.luau</code> file to upload
       <input type="file" id="file-input" accept=".lua,.luau" />
     </section>
-
     <textarea id="code-input" placeholder="Paste your Lua/Luau code here or upload a file..."></textarea>
-
     <button id="obfuscate-btn" disabled>Obfuscate</button>
-
     <section id="output-section">
       <h2>Obfuscated Code</h2>
       <pre id="output"></pre>
-
       <label for="filename-input" style="margin-bottom: 5px; display: block; font-weight: 600; color: #72aaff;">File Name</label>
-      <input
-        type="text"
-        id="filename-input"
-        placeholder="examplename_obfus-v.1697618186188_ABC123DEF456.lua"
-        autocomplete="off"
-      />
-
+      <input type="text" id="filename-input" placeholder="examplename_obfus.lua" autocomplete="off" />
       <button id="download-btn">Download Obfuscated File</button>
     </section>
   </main>
-
   <footer>&copy; 2025 Nebula Obfuscator. All rights reserved.</footer>
-
   <script>
     const fileInput = document.getElementById('file-input');
     const obfuscateBtn = document.getElementById('obfuscate-btn');
@@ -158,110 +143,75 @@
     const downloadBtn = document.getElementById('download-btn');
     const codeInput = document.getElementById('code-input');
     const filenameInput = document.getElementById('filename-input');
+    let originalFileName = 'code.lua';codeInput.addEventListener('input', () => {
+  obfuscateBtn.disabled = codeInput.value.trim().length === 0;
+  outputSection.style.display = 'none';
+});
 
-    let originalFileName = 'code.lua';
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length === 0) return;
+  const file = fileInput.files[0];
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'lua' && ext !== 'luau') {
+    alert('Please upload a .lua or .luau file.');
+    fileInput.value = '';
+    return;
+  }
+  originalFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    codeInput.value = e.target.result;
+    obfuscateBtn.disabled = false;
+  };
+  reader.readAsText(file);
+});
 
-    codeInput.addEventListener('input', () => {
-      obfuscateBtn.disabled = codeInput.value.trim().length === 0;
-      outputSection.style.display = 'none';
-    });
+obfuscateBtn.addEventListener('click', () => {
+  const code = codeInput.value.trim();
+  const obfuscated = obfuscateCode(code);
+  outputPre.textContent = obfuscated;
+  outputSection.style.display = 'flex';
+});
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length === 0) return;
+downloadBtn.addEventListener('click', () => {
+  const content = outputPre.textContent.trim();
+  if (!content) return alert('Nothing to download.');
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  let fileName = filenameInput.value.trim();
+  if (!fileName) fileName = 'obfuscated.lua';
+  if (!fileName.endsWith('.lua')) fileName += '.lua';
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
-      const file = fileInput.files[0];
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (ext !== 'lua' && ext !== 'luau') {
-        alert('Please upload a .lua or .luau file.');
-        fileInput.value = '';
-        return;
-      }
+function obfuscateCode(code) {
+  const escaped = code
+    .split("")
+    .map(char => `\\${char.charCodeAt(0)}`)
+    .join("");
+  
+  const asciiLogo = `--[[
 
-      originalFileName = file.name;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        codeInput.value = e.target.result;
-        obfuscateBtn.disabled = false;
-      };
-      reader.readAsText(file);
-    });
+░▒█▄░▒█░█▀▀░█▀▀▄░█░▒█░█░░█▀▀▄░▒█▀▀▀█░█▀▀▄░█▀▀░█░▒█░█▀▀░█▀▄░█▀▀▄░▀█▀░░▀░░▄▀▀▄░█▀▀▄
+░▒█▒█▒█░█▀▀░█▀▀▄░█░▒█░█░░█▄▄█░▒█░░▒█░█▀▀▄░█▀░░█░▒█░▀▀▄░█░░░█▄▄█░░█░░░█ ░█░░█░█░▒█
+░▒█░░▀█░▀▀▀░▀▀▀▀░░▀▀▀░▀▀░▀░░▀░▒█▄▄▄█░▀▀▀▀░▀░░░░▀▀▀░▀▀▀░▀▀▀░▀░░▀░░▀░░▀▀▀░░▀▀░░▀░░▀
 
-    obfuscateBtn.addEventListener('click', () => {
-      const code = codeInput.value.trim();
-      const obfuscated = obfuscateCode(code);
-      outputPre.textContent = obfuscated;
-      outputSection.style.display = 'flex';
-      filenameInput.value = '';
-      updateFilenamePlaceholder();
-    });
 
-    function generateRandomString(length) {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    }
+Obfuscated by NebulaObfuscation v0.1.1
+Visit: ttvkaiser.github.io
 
-    function updateFilenamePlaceholder() {
-      const timestamp = Date.now();
-      const randomStr = generateRandomString(12);
-      filenameInput.placeholder = `examplename_obfus-v.${timestamp}_${randomStr}.lua`;
-    }
-
-    updateFilenamePlaceholder();
-
-    downloadBtn.addEventListener('click', () => {
-      const content = outputPre.textContent.trim();
-      if (!content) return alert('Nothing to download.');
-
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-
-      let fileName = filenameInput.value.trim();
-      if (!fileName) {
-        const timestamp = Date.now();
-        const randomStr = generateRandomString(10);
-        fileName = `obfuscated_v.test_${timestamp}_${randomStr}.lua`;
-      }
-
-      if (!fileName.toLowerCase().endsWith('.lua') && !fileName.toLowerCase().endsWith('.luau')) {
-        fileName += '.lua';
-      }
-
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-      filenameInput.value = '';
-      updateFilenamePlaceholder();
-    });
-
-    function obfuscateCode(code) {
-      const charList = [];
-      for (let i = 0; i < code.length; i++) {
-        charList.push(code.charCodeAt(i));
-      }
-      const charString = charList.join(',');
-      const wrapped = `(function(s) local f = loadstring(s) f() end)(string.char(${charString}))`;
-
-      const asciiLogo = `--[[
- ███╗   ██╗███████╗██████╗ ██╗   ██╗██╗      █████╗ 
- ████╗  ██║██╔════╝██╔══██╗██║   ██║██║     ██╔══██╗
- ██╔██╗ ██║█████╗  ██████╔╝██║   ██║██║     ███████║
- ██║╚██╗██║██╔══╝  ██╔══██╗██║   ██║██║     ██╔══██║
- ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗██║  ██║
- ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝
- 
-         NebulaObfuscation v.test
 ]]--
 
 `;
-
-      return asciiLogo + wrapped;
-    }
+  
+  const wrapped = `loadstring("${escaped}")()`;
+  
+  return asciiLogo + wrapped;
+}
   </script>
 </body>
 </html>
